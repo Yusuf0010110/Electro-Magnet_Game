@@ -1,283 +1,181 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ElectroMagnet Studio — Single File Game</title>
-<style>
-  :root{--bg:#0b1220;--panel:#0f1724;--accent:#1e90ff;--text:#d9e6f6}
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#07101a);font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
-  #root{display:flex;height:100vh;gap:12px;padding:12px;box-sizing:border-box}
-  canvas{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:8px;box-shadow:0 6px 18px rgba(2,6,23,0.6);flex:1}
-  .panel{width:360px;min-width:240px;background:linear-gradient(180deg,var(--panel),#071020);border-radius:12px;padding:14px;color:var(--text);box-shadow:0 8px 24px rgba(2,6,23,0.6);overflow:auto}
-  h1{font-size:18px;margin:0 0 8px 0}
-  label{display:block;margin:8px 0 4px;font-size:13px;color:#bcd7ff}
-  input[type=range]{width:100%}
-  .btn{display:inline-block;padding:8px 10px;border-radius:8px;background:#0b84ff;color:white;margin:6px 6px 6px 0;border:none;cursor:pointer}
-  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
-  .row{display:flex;gap:8px;align-items:center}
-  .coil-list{margin-top:8px}
-  .coil-item{padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px}
-  .small{font-size:12px;color:#9fbffb}
-  .hint{font-size:12px;color:#9aaed0;margin-top:6px}
-  footer{font-size:12px;color:#93b1de;margin-top:8px}
-</style>
+  <meta charset="UTF-8">
+  <title>Electromagnet Playground ⚡🧲</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #sidebar {
+      width: 250px;
+      background: #1a1a1a;
+      padding: 15px;
+      overflow-y: auto;
+      border-right: 2px solid #333;
+    }
+    #sidebar h2 {
+      font-size: 18px;
+      margin-top: 10px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 5px;
+    }
+    #sidebar label {
+      display: block;
+      margin: 6px 0 2px;
+    }
+    #sidebar input, #sidebar button, #sidebar select {
+      width: 100%;
+      padding: 5px;
+      border: none;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    #canvas {
+      flex: 1;
+      background: #000;
+      cursor: crosshair;
+    }
+    .tooltip {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: -8px;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
-<div id="root">
-  <canvas id="world"></canvas>
-  <div class="panel">
-    <h1>ElectroMagnet Studio ⚡🧲</h1>
-    <div class="row">
-      <button id="addCoil" class="btn">➕ Add Electromagnet</button>
-      <button id="toggleField" class="btn ghost">Toggle Field</button>
-      <button id="resetBtn" class="btn ghost">Reset</button>
-    </div>
+  <div id="sidebar">
+    <h2>Electromagnet Playground</h2>
+    <p>✨ Place, move, and edit electromagnets to see their fields.</p>
 
-    <label>Selected coil: <span id="selName">None</span></label>
-    <div id="controls" style="display:none">
-      <label>Current (A)</label>
-      <input id="current" type="range" min="-10" max="10" step="0.1" value="5" />
-      <div class="row"><div id="curVal" class="small">5 A</div>
-      <button id="flipPol" class="btn ghost">Flip Polarity</button></div>
+    <h2>Magnet Settings</h2>
+    <label>Current (A)</label>
+    <input type="number" id="current" value="5">
+    <label>Radius</label>
+    <input type="number" id="radius" value="30">
+    <label>Turns</label>
+    <input type="number" id="turns" value="10">
+    <button id="addMagnet">➕ Add Magnet</button>
 
-      <label>Radius (px)</label>
-      <input id="radius" type="range" min="12" max="120" value="40" />
-      <div class="row"><div id="radVal" class="small">40 px</div></div>
+    <h2>Field Display</h2>
+    <select id="fieldMode">
+      <option value="none">None</option>
+      <option value="vectors">Vector Arrows</option>
+      <option value="heatmap">Heatmap</option>
+    </select>
 
-      <label>Turns</label>
-      <input id="turns" type="range" min="1" max="40" value="8" />
-      <div class="small" id="turnVal">8 turns</div>
-    </div>
-
-    <div style="margin-top:10px">
-      <label>Simulation</label>
-      <div class="row">
-        <label class="small"><input id="showVectors" type="checkbox" checked/> Show vectors</label>
-        <label class="small"><input id="showHeat" type="checkbox"/> Show heatmap</label>
-      </div>
-      <div class="hint">Controls: Click canvas to place coil. Drag to move. Click coil in list to inspect. Right-click coil to delete.</div>
-    </div>
-
-    <div class="coil-list" id="coilList"></div>
-    <footer>Made with JS — single HTML file. Slay the field. 😎</footer>
+    <h2>Tutorial 📖</h2>
+    <ol>
+      <li>Click "Add Magnet" to create one.</li>
+      <li>Click on canvas to place it.</li>
+      <li>Drag to move magnets around.</li>
+      <li>Right-click to delete a magnet.</li>
+      <li>Change Current, Radius, or Turns in the panel.</li>
+      <li>Switch the Field Mode for different views.</li>
+      <li>Experiment and see how the fields interact!</li>
+    </ol>
   </div>
-</div>
+  <canvas id="canvas"></canvas>
 
-<script>
-// ELECTROMAGNET STUDIO - Single-file interactive demo
-// Features:
-// - Place, move, delete coils
-// - Adjust current, radius, turns
-// - Visualize Bz field using discretized Biot-Savart on circular loop
-// - Show vectors or heatmap
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth - 250;
+    canvas.height = window.innerHeight;
 
-const canvas = document.getElementById('world');
-const ctx = canvas.getContext('2d');
-let W, H;
-function resize(){W = canvas.width = Math.floor(window.innerWidth - 420); H = canvas.height = window.innerHeight - 24;}
-window.addEventListener('resize', resize); resize();
+    let magnets = [];
+    let selectedMagnet = null;
+    let dragging = false;
 
-const mu0 = 4*Math.PI*1e-7; // real constant — we'll scale
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-let coils = [];
-let selected = null;
-let showField = true;
-let showVectors = true;
-let showHeat = false;
-let traceParticles = [];
+      // Field mode
+      if (document.getElementById("fieldMode").value === "vectors") {
+        drawVectors();
+      } else if (document.getElementById("fieldMode").value === "heatmap") {
+        drawHeatmap();
+      }
 
-// UI refs
-const addCoilBtn = document.getElementById('addCoil');
-const toggleFieldBtn = document.getElementById('toggleField');
-const resetBtn = document.getElementById('resetBtn');
-const coilListDiv = document.getElementById('coilList');
-const selName = document.getElementById('selName');
-const controls = document.getElementById('controls');
-const currentRange = document.getElementById('current');
-const curVal = document.getElementById('curVal');
-const radiusRange = document.getElementById('radius');
-const radVal = document.getElementById('radVal');
-const turnsRange = document.getElementById('turns');
-const turnVal = document.getElementById('turnVal');
-const flipPol = document.getElementById('flipPol');
-const showVectorsChk = document.getElementById('showVectors');
-const showHeatChk = document.getElementById('showHeat');
+      // Draw magnets
+      for (let m of magnets) {
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = "cyan";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
 
-addCoilBtn.onclick = ()=> addCoil(W/2 + (Math.random()-0.5)*200, H/2 + (Math.random()-0.5)*200);
-toggleFieldBtn.onclick = ()=> { showField = !showField; toggleFieldBtn.textContent = showField ? 'Toggle Field' : 'Field Off'; };
-resetBtn.onclick = ()=>{ coils=[]; selected=null; rebuildList(); };
-
-function addCoil(x,y,opts={current:5,radius:40,turns:8}){
-  const coil = {id:cryptoRandomId(),x,y,current:opts.current,radius:opts.radius,turns:opts.turns,angle:0};
-  coils.push(coil); rebuildList(); selectCoil(coil.id);
-}
-
-function cryptoRandomId(){return Math.random().toString(36).slice(2,9)}
-
-function rebuildList(){
-  coilListDiv.innerHTML = '';
-  coils.forEach(c=>{
-    const el = document.createElement('div'); el.className='coil-item';
-    el.innerHTML = `<div style="display:flex;justify-content:space-between"><strong>Coil ${c.id}</strong><span class="small">${c.current.toFixed(1)} A</span></div>` +
-                   `<div class="small">r:${Math.round(c.radius)}px turns:${c.turns}</div>`;
-    el.onclick = ()=> selectCoil(c.id);
-    el.oncontextmenu = (e)=>{ e.preventDefault(); deleteCoil(c.id); };
-    coilListDiv.appendChild(el);
-  });
-  updateSelectionUI();
-}
-
-function deleteCoil(id){ coils = coils.filter(c=>c.id!==id); if(selected && selected.id===id) selected=null; rebuildList(); }
-
-function selectCoil(id){ selected = coils.find(c=>c.id===id) || null; updateSelectionUI(); }
-
-function updateSelectionUI(){ if(selected){ selName.textContent = selected.id; controls.style.display='block'; currentRange.value = selected.current; curVal.textContent = selected.current.toFixed(1)+' A'; radiusRange.value = selected.radius; radVal.textContent = Math.round(selected.radius)+' px'; turnsRange.value = selected.turns; turnVal.textContent = selected.turns+' turns'; }
-else{ selName.textContent='None'; controls.style.display='none'; }
- rebuildList(); }
-
-currentRange.oninput = ()=>{ if(!selected) return; selected.current = parseFloat(currentRange.value); curVal.textContent = selected.current.toFixed(1)+' A'; rebuildList(); };
-radiusRange.oninput = ()=>{ if(!selected) return; selected.radius = parseFloat(radiusRange.value); radVal.textContent = Math.round(selected.radius)+' px'; };
-turnsRange.oninput = ()=>{ if(!selected) return; selected.turns = parseInt(turnsRange.value); turnVal.textContent = selected.turns+' turns'; };
-flipPol.onclick = ()=>{ if(!selected) return; selected.current *= -1; currentRange.value = selected.current; curVal.textContent = selected.current.toFixed(1)+' A'; rebuildList(); };
-showVectorsChk.onchange = ()=> showVectors = showVectorsChk.checked;
-showHeatChk.onchange = ()=> showHeat = showHeatChk.checked;
-
-// Drag & place logic
-let drag = null;
-canvas.addEventListener('mousedown', (e)=>{
-  const pos = getMouse(e);
-  const hit = findCoilAt(pos.x,pos.y);
-  if(e.button===0){ // left
-    if(hit){ drag = {id:hit.id,offx:pos.x-hit.x,offy:pos.y-hit.y}; selectCoil(hit.id); }
-    else{ addCoil(pos.x,pos.y); }
-  }
-});
-canvas.addEventListener('mousemove', (e)=>{ if(drag){ const pos = getMouse(e); const coil = coils.find(c=>c.id===drag.id); if(coil){ coil.x = pos.x - drag.offx; coil.y = pos.y - drag.offy; } } });
-canvas.addEventListener('mouseup', ()=>{ drag=null; });
-canvas.addEventListener('contextmenu',(e)=>{ e.preventDefault(); const pos = getMouse(e); const hit = findCoilAt(pos.x,pos.y); if(hit) deleteCoil(hit.id); });
-function getMouse(e){ const rect = canvas.getBoundingClientRect(); return {x:(e.clientX-rect.left)*(canvas.width/rect.width), y:(e.clientY-rect.top)*(canvas.height/rect.height)} }
-function findCoilAt(x,y){ for(let i=coils.length-1;i>=0;i--){ const c=coils[i]; const d = Math.hypot(x-c.x,y-c.y); if(d < c.radius+8) return c; } return null; }
-
-// FIELD CALC: discretize each coil into segments and compute Bz at a point
-function coilBzAtPoint(coil, px, py){
-  // discretize circle into segments
-  const segs = 28; let bz = 0;
-  const I = coil.current; const turns = coil.turns; // effective current scales with turns
-  const effI = I * turns;
-  for(let i=0;i<segs;i++){
-    const a1 = (i/	segs)*Math.PI*2; const a2 = ((i+1)/segs)*Math.PI*2;
-    const x1 = coil.x + Math.cos(a1)*coil.radius; const y1 = coil.y + Math.sin(a1)*coil.radius;
-    const x2 = coil.x + Math.cos(a2)*coil.radius; const y2 = coil.y + Math.sin(a2)*coil.radius;
-    const dlx = x2-x1; const dly = y2-y1;
-    const rx = px - x1; const ry = py - y1;
-    const r2 = rx*rx + ry*ry; const r = Math.sqrt(r2) + 1e-6;
-    // dBz = (mu0/4pi) * I * (dl x r)_z / r^3
-    const cross = dlx*ry - dly*rx;
-    bz += (cross * effI) / (r*r2 + 1e-9);
-  }
-  // scale factor to make it visible
-  return bz * (mu0/(4*Math.PI));
-}
-
-// Sample field on a grid for visualization
-function computeFieldGrid(gridW, gridH, step){
-  const data = [];
-  for(let y=step/2;y<H;y+=step){
-    const row = [];
-    for(let x=step/2;x<W;x+=step){
-      let bz=0;
-      for(const c of coils){ bz += coilBzAtPoint(c,x,y); }
-      row.push(bz);
+      requestAnimationFrame(draw);
     }
-    data.push(row);
-  }
-  return {data,cols:Math.ceil(W/step),rows:Math.ceil(H/step)};
-}
 
-// Main draw loop
-let last = performance.now();
-function loop(t){ const dt = (t-last)/1000; last=t; ctx.clearRect(0,0,W,H);
-  // draw heatmap if requested
-  if(showField && showHeat && coils.length>0){ const step = 18; const grid = computeFieldGrid(W,H,step);
-    for(let yi=0; yi<grid.rows; yi++){
-      for(let xi=0; xi<grid.cols; xi++){
-        const bz = grid.data[yi][xi]; const v = Math.tanh(bz*8e6);
-        const gx = xi*step + step/2; const gy = yi*step + step/2;
-        if(Math.abs(v)>0.02){
-          ctx.beginPath(); ctx.arc(gx,gy,step*0.45,0,Math.PI*2);
-          ctx.fillStyle = `rgba(${v>0?255:20},${Math.abs(v)*200},${v<0?255:60},${Math.abs(v)*0.9})`;
-          ctx.fill();
+    function drawVectors() {
+      for (let x = 50; x < canvas.width; x += 50) {
+        for (let y = 50; y < canvas.height; y += 50) {
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 10, y);
+          ctx.strokeStyle = "lime";
+          ctx.stroke();
         }
       }
     }
-  }
 
-  // draw field vectors
-  if(showField && showVectors && coils.length>0){
-    const step = 36;
-    ctx.lineWidth = 1; ctx.strokeStyle='rgba(255,255,255,0.75)';
-    for(let y=step/2;y<H;y+=step){
-      for(let x=step/2;x<W;x+=step){
-        let bx=0, by=0; // approximate in-plane B by numerically differentiating Bz
-        // central difference on small offset
-        const eps = 2;
-        const bz = totalBzAt(x,y);
-        const bxEstimate = (totalBzAt(x, y-eps) - totalBzAt(x, y+eps)) / (2*eps); // dBz/dy -> -Bx? rough
-        const byEstimate = (totalBzAt(x+eps,y) - totalBzAt(x-eps,y)) / (2*eps); // dBz/dx -> By? rough
-        bx = bxEstimate; by = -byEstimate; // heuristic to get circulating field
-        const mag = Math.hypot(bx,by) + 1e-12;
-        const len = Math.log(1+Math.abs(mag)*1e7)*8;
-        const ux = bx/mag, uy = by/mag;
-        ctx.beginPath(); ctx.moveTo(x - ux*len/2, y - uy*len/2); ctx.lineTo(x + ux*len/2, y + uy*len/2); ctx.stroke();
-        // arrow head
-        ctx.beginPath(); ctx.moveTo(x + ux*len/2, y + uy*len/2);
-        ctx.lineTo(x + ux*len/2 - uy*4, y + uy*len/2 + ux*4);
-        ctx.lineTo(x + ux*len/2 + uy*4, y + uy*len/2 - ux*4); ctx.closePath(); ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.fill();
+    function drawHeatmap() {
+      for (let i = 0; i < magnets.length; i++) {
+        let m = magnets[i];
+        let grd = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.radius * 3);
+        grd.addColorStop(0, "rgba(0,255,255,0.5)");
+        grd.addColorStop(1, "transparent");
+        ctx.fillStyle = grd;
+        ctx.fillRect(m.x - m.radius * 3, m.y - m.radius * 3, m.radius * 6, m.radius * 6);
       }
     }
-  }
 
-  // draw coils
-  for(const c of coils){
-    drawCoil(c);
-  }
+    document.getElementById("addMagnet").onclick = () => {
+      let current = parseFloat(document.getElementById("current").value);
+      let radius = parseFloat(document.getElementById("radius").value);
+      let turns = parseFloat(document.getElementById("turns").value);
+      magnets.push({ x: canvas.width / 2, y: canvas.height / 2, current, radius, turns });
+    };
 
-  // draw selection highlight
-  if(selected){ ctx.beginPath(); ctx.arc(selected.x,selected.y,selected.radius+6,0,Math.PI*2); ctx.strokeStyle='rgba(30,144,255,0.8)'; ctx.lineWidth=2; ctx.stroke(); }
+    canvas.addEventListener("mousedown", e => {
+      for (let m of magnets) {
+        let dx = e.offsetX - m.x;
+        let dy = e.offsetY - m.y;
+        if (Math.sqrt(dx * dx + dy * dy) < m.radius) {
+          selectedMagnet = m;
+          dragging = true;
+          break;
+        }
+      }
+    });
 
-  requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
+    canvas.addEventListener("mousemove", e => {
+      if (dragging && selectedMagnet) {
+        selectedMagnet.x = e.offsetX;
+        selectedMagnet.y = e.offsetY;
+      }
+    });
 
-function drawCoil(c){
-  // multi-turn visual
-  for(let t=0;t<c.turns;t++){
-    const r = c.radius - (t - c.turns/2)*2;
-    ctx.beginPath(); ctx.arc(c.x,c.y,r,0,Math.PI*2);
-    ctx.strokeStyle = `rgba(${c.current>0?180:80},${c.current>0?220:120},${c.current>0?255:200},${0.08 + Math.abs(c.current)/12})`;
-    ctx.lineWidth = 2; ctx.stroke();
-  }
-  // center label
-  ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.font='12px Inter,Arial'; ctx.fillText(`${c.current.toFixed(1)}A`, c.x-12, c.y+4);
-}
+    canvas.addEventListener("mouseup", () => {
+      dragging = false;
+      selectedMagnet = null;
+    });
 
-function totalBzAt(x,y){ let s=0; for(const c of coils) s+=coilBzAtPoint(c,x,y); return s; }
+    canvas.addEventListener("contextmenu", e => {
+      e.preventDefault();
+      magnets = magnets.filter(m => Math.sqrt((e.offsetX - m.x) ** 2 + (e.offsetY - m.y) ** 2) > m.radius);
+    });
 
-// helpful starter scene
-addCoil(W*0.4,H*0.5,{current:6,radius:44,turns:10});
-addCoil(W*0.6,H*0.5,{current:-5,radius:36,turns:8});
-
-// simple inspector update loop
-setInterval(()=>{
-  if(selected){ selName.textContent = selected.id; }
-},200);
-
-// tiny helpers
-window.addEventListener('keydown',(e)=>{ if(e.key==='Delete' && selected){ deleteCoil(selected.id); selected=null; } if(e.key==='s'&& (e.ctrlKey||e.metaKey)){ e.preventDefault(); downloadFile(); } });
-
-function downloadFile(){ const blob = new Blob([document.documentElement.outerHTML],{type:'text/html'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='electromagnet-studio.html'; a.click(); }
-
-</script>
+    draw();
+  </script>
 </body>
 </html>
