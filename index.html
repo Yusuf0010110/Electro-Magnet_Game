@@ -42,12 +42,6 @@
       background: #000;
       cursor: crosshair;
     }
-    .tooltip {
-      font-size: 12px;
-      color: #aaa;
-      margin-top: -8px;
-      margin-bottom: 10px;
-    }
   </style>
 </head>
 <body>
@@ -77,6 +71,7 @@
       <li>Click on canvas to place it.</li>
       <li>Drag to move magnets around.</li>
       <li>Right-click to delete a magnet.</li>
+      <li>Click a magnet to select and edit it.</li>
       <li>Change Current, Radius, or Turns in the panel.</li>
       <li>Switch the Field Mode for different views.</li>
       <li>Experiment and see how the fields interact!</li>
@@ -94,6 +89,10 @@
     let selectedMagnet = null;
     let dragging = false;
 
+    const currentInput = document.getElementById("current");
+    const radiusInput = document.getElementById("radius");
+    const turnsInput = document.getElementById("turns");
+
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -108,7 +107,7 @@
       for (let m of magnets) {
         ctx.beginPath();
         ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = "cyan";
+        ctx.strokeStyle = (m === selectedMagnet) ? "yellow" : "cyan";
         ctx.lineWidth = 2;
         ctx.stroke();
       }
@@ -129,8 +128,7 @@
     }
 
     function drawHeatmap() {
-      for (let i = 0; i < magnets.length; i++) {
-        let m = magnets[i];
+      for (let m of magnets) {
         let grd = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.radius * 3);
         grd.addColorStop(0, "rgba(0,255,255,0.5)");
         grd.addColorStop(1, "transparent");
@@ -140,11 +138,25 @@
     }
 
     document.getElementById("addMagnet").onclick = () => {
-      let current = parseFloat(document.getElementById("current").value);
-      let radius = parseFloat(document.getElementById("radius").value);
-      let turns = parseFloat(document.getElementById("turns").value);
-      magnets.push({ x: canvas.width / 2, y: canvas.height / 2, current, radius, turns });
+      let current = parseFloat(currentInput.value);
+      let radius = parseFloat(radiusInput.value);
+      let turns = parseFloat(turnsInput.value);
+      let newMagnet = { x: canvas.width / 2, y: canvas.height / 2, current, radius, turns };
+      magnets.push(newMagnet);
+      selectedMagnet = newMagnet;
     };
+
+    // Update selected magnet when inputs change
+    function updateMagnet() {
+      if (selectedMagnet) {
+        selectedMagnet.current = parseFloat(currentInput.value);
+        selectedMagnet.radius = parseFloat(radiusInput.value);
+        selectedMagnet.turns = parseFloat(turnsInput.value);
+      }
+    }
+    currentInput.addEventListener("input", updateMagnet);
+    radiusInput.addEventListener("input", updateMagnet);
+    turnsInput.addEventListener("input", updateMagnet);
 
     canvas.addEventListener("mousedown", e => {
       for (let m of magnets) {
@@ -152,6 +164,9 @@
         let dy = e.offsetY - m.y;
         if (Math.sqrt(dx * dx + dy * dy) < m.radius) {
           selectedMagnet = m;
+          currentInput.value = m.current;
+          radiusInput.value = m.radius;
+          turnsInput.value = m.turns;
           dragging = true;
           break;
         }
@@ -167,12 +182,14 @@
 
     canvas.addEventListener("mouseup", () => {
       dragging = false;
-      selectedMagnet = null;
     });
 
     canvas.addEventListener("contextmenu", e => {
       e.preventDefault();
       magnets = magnets.filter(m => Math.sqrt((e.offsetX - m.x) ** 2 + (e.offsetY - m.y) ** 2) > m.radius);
+      if (selectedMagnet && !magnets.includes(selectedMagnet)) {
+        selectedMagnet = null;
+      }
     });
 
     draw();
